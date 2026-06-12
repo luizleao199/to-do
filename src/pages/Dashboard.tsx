@@ -1,62 +1,85 @@
 "use client";
 
 import { Link, useNavigate } from "react-router-dom";
-import { LogOut, Plus, CheckSquare, Clock, Trash2, LayoutDashboard } from "lucide-react";
+import { LogOut, Plus, CheckSquare, Clock, Trash2, LayoutDashboard, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useTasks, useCreateTask, useDeleteTask, useToggleTask } from "@/contexts/tasks/hooks/useTasks";
+import { TaskForm } from "@/contexts/tasks/components/TaskForm";
+import { TaskList } from "@/contexts/tasks/components/TaskList";
+import { useState, useEffect } from "react";
+import type { Task } from "@/contexts/tasks/tasks.types";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [tasks, setTasks] = useState<Array<{id: number, title: string, completed: boolean, priority: string}>>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [user, setUser] = useState<{ email: string; user_metadata?: { full_name?: string; avatar_url?: string } } | null>(null);
+  
+  const { data: tasks, isLoading, refetch } = useTasks();
+  const createTask = useCreateTask();
+  const deleteTask = useDeleteTask();
+  const toggleTask = useToggleTask();
 
-  const handleLogout = () => {
-    toast.success("Você saiu da sua conta");
-    navigate("/login");
+  // Fetch user on mount
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+        navigate("/login");
+      }
+    });
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        navigate("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Você saiu da sua conta");
+      navigate("/login");
+    }
   };
 
   const handleAddTask = () => {
-    const title = prompt("Digite o título da tarefa:");
-    if (title?.trim()) {
-      const newTask = {
-        id: Date.now(),
-        title: title.trim(),
-        completed: false,
-        priority: "medium"
-      };
-      setTasks(prev => [newTask, ...prev]);
-      toast.success("Tarefa criada!");
-    }
+    setIsFormOpen(true);
   };
 
-  const handleToggleTask = (id: number) => {
-    setTasks(prev => prev.map(task => 
-      task.id === id ? { ...task, completed: !task.completed } : task
-    ));
-  };
-
-  const handleDeleteTask = (id: number) => {
-    setTasks(prev => prev.filter(task => task.id !== id));
-    toast.success("Tarefa excluída");
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
   };
 
   // Stats calculados dinamicamente
+  const totalTasks = tasks?.length ?? 0;
+  const completedTasks = tasks?.filter(t => t.completed).length ?? 0;
+  const pendingTasks = tasks?.filter(t => !t.completed).length ?? 0;
+
   const stats = [
-    { label: "Total", count: tasks.length, icon: CheckSquare, color: "bg-purple-500" },
-    { label: "Concluídas", count: tasks.filter(t => t.completed).length, icon: CheckSquare, color: "bg-green-500" },
-    { label: "Pendentes", count: tasks.filter(t => !t.completed).length, icon: Clock, color: "bg-yellow-500" },
+    { label: "Total", count: totalTasks, icon: CheckSquare, color: "bg-purple-500" },
+    { label: "Concluídas", count: completedTasks, icon: CheckSquare, color: "bg-green-500" },
+    { label: "Pendentes", count: pendingTasks, icon: Clock, color: "bg-yellow-500" },
     { label: "Excluídas", count: 0, icon: Trash2, color: "bg-red-500" },
   ];
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-      case "medium": return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case "low": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
-    }
+  const getInitials = (email: string) => {
+    return email.split('@')[0].substring(0, 2).toUpperCase();
   };
 
   return (
@@ -74,18 +97,33 @@ const Dashboard = () => {
               </Link>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
-                Bem-vindo de volta!
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-                className="text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
-                aria-label="Sair"
-              >
-                <LogOut className="w-5 h-5" />
-              </Button>
+              {user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:bg-transparent p-1">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={user.user_metadata?.avatar_url} alt={user.email} />
+                        <AvatarFallback className="bg-gradient-to-br from-purple-600 to-purple-800 text-white text-sm font-medium">
+                          {getInitials(user.email)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="hidden sm:block font-medium">{user.user_metadata?.full_name || user.email.split('@')[0]}</span>
+                      <User className="w-4 h-4 hidden sm:block" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="dark:bg-purple-950 border-purple-800 w-56">
+                    <div className="px-3 py-2 border-b border-purple-100 dark:border-purple-800">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{user.user_metadata?.full_name || user.email.split('@')[0]}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                    </div>
+                    <DropdownMenuSeparator className="border-purple-100 dark:border-purple-800" />
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sair
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>
@@ -136,72 +174,13 @@ const Dashboard = () => {
           </Button>
         </div>
 
-        {tasks.length > 0 ? (
-          <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
-            {tasks.map((task) => (
-              <Card
-                key={task.id}
-                className="bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 hover:shadow-md hover:shadow-purple-500/10 transition-all duration-200 group"
-              >
-                <CardContent className="p-4 sm:p-5">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-4 flex-1 min-w-0">
-                      <button
-                        onClick={() => handleToggleTask(task.id)}
-                        className="w-5 h-5 rounded border-2 border-purple-500 flex items-center justify-center flex-shrink-0 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
-                        aria-label={task.completed ? "Marcar como pendente" : "Marcar como concluída"}
-                      >
-                        {task.completed && (
-                          <svg className="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </button>
-                      <div className="min-w-0">
-                        <h3 className={`${task.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"} font-medium truncate`}>
-                          {task.title}
-                        </h3>
-                        <Badge variant="secondary" className={getPriorityColor(task.priority)} >
-                          {task.priority === "high" ? "Alta" : task.priority === "medium" ? "Média" : "Baixa"}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="icon" className="text-gray-400 hover:text-purple-500">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-500" onClick={() => handleDeleteTask(task.id)}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          /* Empty State */
-          <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: "0.4s" }}>
-            <Card className="bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800">
-              <CardContent className="py-12 px-6">
-                <CheckSquare className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Nenhuma tarefa ainda
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-xs mx-auto">
-                  Crie sua primeira tarefa e comece a organizar seu dia com mais produtividade.
-                </p>
-                <Button className="gap-2" size="lg" onClick={handleAddTask}>
-                  <Plus className="w-5 h-5" />
-                  Criar Primeira Tarefa
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        <div className="animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
+          <TaskList />
+        </div>
       </main>
+
+      {/* Task Form Modal */}
+      <TaskForm isOpen={isFormOpen} onClose={handleCloseForm} />
 
       {/* Animations */}
       <style jsx global>{`
@@ -217,9 +196,14 @@ const Dashboard = () => {
           from { opacity: 0; }
           to { opacity: 1; }
         }
+        @keyframes slide-up {
+          from { opacity: 0; transform: translateY(20px) scale(0.95); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
         .animate-fade-in-down { animation: fade-in-down 0.4s ease-out forwards; }
         .animate-fade-in-up { animation: fade-in-up 0.4s ease-out forwards; opacity: 0; }
         .animate-fade-in { animation: fade-in 0.4s ease-out forwards; opacity: 0; }
+        .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
       `}</style>
     </div>
   );

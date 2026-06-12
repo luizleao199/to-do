@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock, Loader2, Eye, EyeOff, Chrome } from "lucide-react";
+import { Mail, Lock, Loader2, Eye, EyeOff, User, Chrome } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,13 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const Login = () => {
+const Register = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const validateEmail = (email: string) => {
@@ -25,7 +26,7 @@ const Login = () => {
   };
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {};
+    const newErrors: { email?: string; password?: string; confirmPassword?: string } = {};
     
     if (!email.trim()) {
       newErrors.email = "Email é obrigatório";
@@ -37,6 +38,10 @@ const Login = () => {
       newErrors.password = "Senha é obrigatória";
     } else if (password.length < 6) {
       newErrors.password = "Senha deve ter pelo menos 6 caracteres";
+    }
+    
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = "As senhas não coincidem";
     }
     
     setErrors(newErrors);
@@ -52,14 +57,14 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
       });
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          setErrors({ password: "Email ou senha incorretos" });
+        if (error.message.includes('already registered')) {
+          setErrors({ email: "Este email já está cadastrado" });
         } else {
           toast.error(error.message);
         }
@@ -67,8 +72,8 @@ const Login = () => {
         return;
       }
 
-      toast.success("Login realizado com sucesso!");
-      navigate("/dashboard");
+      toast.success("Conta criada! Verifique seu email para confirmar.");
+      navigate("/login");
     } catch (err) {
       toast.error("Erro inesperado. Tente novamente.");
     } finally {
@@ -111,12 +116,12 @@ const Login = () => {
           <p className="text-gray-500 dark:text-gray-400 mt-2 text-sm">Organize sua vida, uma tarefa por vez</p>
         </div>
 
-        {/* Card de Login */}
+        {/* Card de Cadastro */}
         <Card className="bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 shadow-xl shadow-purple-500/10 dark:shadow-purple-500/20 animate-fade-in-up">
           <CardHeader className="text-center pb-2">
-            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Entrar na sua conta</CardTitle>
+            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">Criar sua conta</CardTitle>
             <CardDescription className="text-gray-500 dark:text-gray-400">
-              Preencha os campos abaixo para acessar
+              Preencha os campos abaixo para começar
             </CardDescription>
           </CardHeader>
           
@@ -160,17 +165,9 @@ const Login = () => {
 
               {/* Password Field */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Senha
-                  </Label>
-                  <Link 
-                    href="/forgot-password"
-                    className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
-                  >
-                    Esqueci minha senha
-                  </Link>
-                </div>
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Senha
+                </Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 transition-colors duration-200 group-focus-within:text-purple-500" aria-hidden="true" />
                   <Input
@@ -191,7 +188,7 @@ const Login = () => {
                         : "border-gray-200 dark:border-purple-700 focus:border-purple-500 focus:ring-purple-500 hover:border-purple-300 dark:hover:border-purple-600"
                     } focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-purple-950`}
                     disabled={isLoading}
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -209,6 +206,41 @@ const Login = () => {
                 )}
               </div>
 
+              {/* Confirm Password Field */}
+              <div className="space-y-1.5">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Confirmar Senha
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500 transition-colors duration-200 group-focus-within:text-purple-500" aria-hidden="true" />
+                  <Input
+                    id="confirmPassword"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: undefined }));
+                    }}
+                    onBlur={() => validateForm()}
+                    className={`pl-10 pr-4 py-3 rounded-xl border-2 transition-all duration-200 ${
+                      errors.confirmPassword 
+                        ? "border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500 bg-red-50 dark:bg-red-900/20" 
+                        : confirmPassword && isSubmitted
+                        ? "border-green-300 dark:border-green-700 focus:border-green-500 focus:ring-green-500"
+                        : "border-gray-200 dark:border-purple-700 focus:border-purple-500 focus:ring-purple-500 hover:border-purple-300 dark:hover:border-purple-600"
+                    } focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-purple-950`}
+                    disabled={isLoading}
+                    autoComplete="new-password"
+                  />
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-red-500 dark:text-red-400 animate-slide-in" role="alert">
+                    {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
+
               {/* Submit Button */}
               <Button
                 type="submit"
@@ -218,10 +250,10 @@ const Login = () => {
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Entrando...
+                    Criando conta...
                   </span>
                 ) : (
-                  "Entrar"
+                  "Criar Conta"
                 )}
               </Button>
             </form>
@@ -233,7 +265,7 @@ const Login = () => {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-4 bg-white/80 dark:bg-purple-950/80 text-gray-500 dark:text-gray-400 backdrop-blur-sm">
-                  ou continue com
+                  ou cadastre-se com
                 </span>
               </div>
             </div>
@@ -250,14 +282,14 @@ const Login = () => {
               <span>Continuar com Google</span>
             </Button>
 
-            {/* Sign Up Link */}
+            {/* Login Link */}
             <p className="text-center text-sm text-gray-600 dark:text-gray-400">
-              Não tem conta?{" "}
+              Já tem conta?{" "}
               <Link
-                to="/register"
+                to="/login"
                 className="font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
               >
-                Cadastre-se
+                Entrar
               </Link>
             </p>
           </CardContent>
@@ -324,4 +356,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
