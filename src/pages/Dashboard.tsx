@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useTasks } from "@/contexts/tasks/hooks/useTasks";
+import { useTasks, useCreateTask, useDeleteTask, useToggleTask } from "@/contexts/tasks/hooks/useTasks";
 import { TaskForm } from "@/contexts/tasks/components/TaskForm";
 import { TaskList } from "@/contexts/tasks/components/TaskList";
 import { useState, useEffect } from "react";
