@@ -6,29 +6,48 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [tasks, setTasks] = useState<Array<{id: number, title: string, completed: boolean, priority: string}>>([]);
 
   const handleLogout = () => {
     toast.success("Você saiu da sua conta");
     navigate("/login");
   };
 
-  // Dados de exemplo para o dashboard
-  const stats = [
-    { label: "Total", count: 12, icon: CheckSquare, color: "bg-purple-500" },
-    { label: "Concluídas", count: 8, icon: CheckSquare, color: "bg-green-500" },
-    { label: "Pendentes", count: 4, icon: Clock, color: "bg-yellow-500" },
-    { label: "Excluídas", count: 2, icon: Trash2, color: "bg-red-500" },
-  ];
+  const handleAddTask = () => {
+    const title = prompt("Digite o título da tarefa:");
+    if (title?.trim()) {
+      const newTask = {
+        id: Date.now(),
+        title: title.trim(),
+        completed: false,
+        priority: "medium"
+      };
+      setTasks(prev => [newTask, ...prev]);
+      toast.success("Tarefa criada!");
+    }
+  };
 
-  const recentTasks = [
-    { id: 1, title: "Finalizar relatório mensal", completed: true, priority: "high" },
-    { id: 2, title: "Reunião com equipe às 14h", completed: false, priority: "high" },
-    { id: 3, title: "Comprar materiais de escritório", completed: false, priority: "medium" },
-    { id: 4, title: "Ler documentação da nova API", completed: true, priority: "low" },
-    { id: 5, title: "Fazer backup do banco de dados", completed: false, priority: "high" },
+  const handleToggleTask = (id: number) => {
+    setTasks(prev => prev.map(task => 
+      task.id === id ? { ...task, completed: !task.completed } : task
+    ));
+  };
+
+  const handleDeleteTask = (id: number) => {
+    setTasks(prev => prev.filter(task => task.id !== id));
+    toast.success("Tarefa excluída");
+  };
+
+  // Stats calculados dinamicamente
+  const stats = [
+    { label: "Total", count: tasks.length, icon: CheckSquare, color: "bg-purple-500" },
+    { label: "Concluídas", count: tasks.filter(t => t.completed).length, icon: CheckSquare, color: "bg-green-500" },
+    { label: "Pendentes", count: tasks.filter(t => !t.completed).length, icon: Clock, color: "bg-yellow-500" },
+    { label: "Excluídas", count: 0, icon: Trash2, color: "bg-red-500" },
   ];
 
   const getPriorityColor = (priority: string) => {
@@ -110,72 +129,78 @@ const Dashboard = () => {
 
         {/* Tasks Section */}
         <div className="flex items-center justify-between mb-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tarefas Recentes</h2>
-          <Button className="gap-2" size="sm">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Minhas Tarefas</h2>
+          <Button className="gap-2" size="sm" onClick={handleAddTask}>
             <Plus className="w-4 h-4" />
             Nova Tarefa
           </Button>
         </div>
 
-        <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
-          {recentTasks.map((task) => (
-            <Card
-              key={task.id}
-              className="bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 hover:shadow-md hover:shadow-purple-500/10 transition-all duration-200 group"
-            >
-              <CardContent className="p-4 sm:p-5">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="w-5 h-5 rounded border-2 border-purple-500 flex items-center justify-center flex-shrink-0">
-                      {task.completed && (
-                        <svg className="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+        {tasks.length > 0 ? (
+          <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
+            {tasks.map((task) => (
+              <Card
+                key={task.id}
+                className="bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800 hover:shadow-md hover:shadow-purple-500/10 transition-all duration-200 group"
+              >
+                <CardContent className="p-4 sm:p-5">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <button
+                        onClick={() => handleToggleTask(task.id)}
+                        className="w-5 h-5 rounded border-2 border-purple-500 flex items-center justify-center flex-shrink-0 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-colors"
+                        aria-label={task.completed ? "Marcar como pendente" : "Marcar como concluída"}
+                      >
+                        {task.completed && (
+                          <svg className="w-3.5 h-3.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                      <div className="min-w-0">
+                        <h3 className={`${task.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"} font-medium truncate`}>
+                          {task.title}
+                        </h3>
+                        <Badge variant="secondary" className={getPriorityColor(task.priority)} >
+                          {task.priority === "high" ? "Alta" : task.priority === "medium" ? "Média" : "Baixa"}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="text-gray-400 hover:text-purple-500">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className={`${task.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"} font-medium truncate`}>
-                        {task.title}
-                      </h3>
-                      <Badge variant="secondary" className={getPriorityColor(task.priority)} >
-                        {task.priority === "high" ? "Alta" : task.priority === "medium" ? "Média" : "Baixa"}
-                      </Badge>
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-500" onClick={() => handleDeleteTask(task.id)}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" size="icon" className="text-gray-400 hover:text-purple-500">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-gray-400 hover:text-red-500">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          /* Empty State */
+          <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: "0.4s" }}>
+            <Card className="bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800">
+              <CardContent className="py-12 px-6">
+                <CheckSquare className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  Nenhuma tarefa ainda
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-xs mx-auto">
+                  Crie sua primeira tarefa e comece a organizar seu dia com mais produtividade.
+                </p>
+                <Button className="gap-2" size="lg" onClick={handleAddTask}>
+                  <Plus className="w-5 h-5" />
+                  Criar Primeira Tarefa
+                </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
-
-        {/* Empty State / CTA */}
-        <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: "0.5s" }}>
-          <Card className="bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800">
-            <CardContent className="py-12 px-6">
-              <CheckSquare className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                Pronto para começar?
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-xs mx-auto">
-                Crie sua primeira tarefa e comece a organizar seu dia com mais produtividade.
-              </p>
-              <Button className="gap-2" size="lg">
-                <Plus className="w-5 h-5" />
-                Criar Primeira Tarefa
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+          </div>
+        )}
       </main>
 
       {/* Animations */}
