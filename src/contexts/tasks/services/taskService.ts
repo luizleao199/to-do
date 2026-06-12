@@ -11,8 +11,7 @@ import type { Task, TaskInsert, TaskUpdate, TaskFilters } from '../tasks.types';
 export const fetchTasks = async (filters?: TaskFilters): Promise<Task[]> => {
   let query = supabase
     .from('tasks')
-    .select('*')
-    .order('created_at', { ascending: false });
+    .select('*');
 
   if (filters?.completed !== undefined) {
     query = query.eq('completed', filters.completed);
@@ -20,6 +19,14 @@ export const fetchTasks = async (filters?: TaskFilters): Promise<Task[]> => {
 
   if (filters?.search) {
     query = query.ilike('title', `%${filters.search}%`);
+  }
+
+  // Apply sorting
+  const sortBy = filters?.sortBy || 'created_at';
+  if (sortBy === 'due_date') {
+    query = query.order('due_date', { ascending: true, nullsLast: true });
+  } else {
+    query = query.order('created_at', { ascending: false });
   }
 
   const { data, error } = await query;

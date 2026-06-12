@@ -1,12 +1,12 @@
 "use client";
 
-import { Check, MoreHorizontal, Trash2, Edit2 } from "lucide-react";
+import { Check, MoreHorizontal, Trash2, AlertCircle, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToggleTask, useDeleteTask } from "../hooks/useTasks";
-import { cn } from "@/lib/utils";
+import { cn, formatDate, getDueDateStatus, getDueDateLabel } from "@/lib/utils";
 import type { Task } from "../tasks.types";
 
 interface TaskItemProps {
@@ -27,6 +27,17 @@ export const TaskItem = ({ task }: TaskItemProps) => {
     }
   };
 
+  const dueDateStatus = getDueDateStatus(task.due_date, task.completed);
+  const dueDateLabel = getDueDateLabel(task.due_date);
+
+  const getCardClasses = () => {
+    const base = "bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm transition-all duration-200 group hover:shadow-md hover:shadow-purple-500/10";
+    if (task.completed) return cn(base, "opacity-70");
+    if (dueDateStatus === 'overdue') return cn(base, "border-2 border-red-300 dark:border-red-700");
+    if (dueDateStatus === 'today') return cn(base, "border-2 border-yellow-300 dark:border-yellow-700");
+    return cn(base, "border-purple-100 dark:border-purple-800");
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case "high": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
@@ -36,17 +47,10 @@ export const TaskItem = ({ task }: TaskItemProps) => {
     }
   };
 
-  // Como não temos priority no tipo atual, vamos usar completed como base
   const priority = task.completed ? "low" : "medium";
 
   return (
-    <Card
-      className={cn(
-        "bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800",
-        "hover:shadow-md hover:shadow-purple-500/10 transition-all duration-200 group",
-        task.completed && "opacity-70"
-      )}
-    >
+    <Card className={getCardClasses()}>
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -56,27 +60,52 @@ export const TaskItem = ({ task }: TaskItemProps) => {
                 "w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors",
                 task.completed
                   ? "border-green-500 bg-green-500 text-white hover:bg-green-600"
+                  : dueDateStatus === 'overdue'
+                  ? "border-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
+                  : dueDateStatus === 'today'
+                  ? "border-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/30"
                   : "border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30"
               )}
               aria-label={task.completed ? "Marcar como pendente" : "Marcar como concluída"}
             >
               {task.completed && <Check className="w-3.5 h-3.5" />}
             </button>
-            <div className="min-w-0">
-              <h3 className={cn(
-                "font-medium truncate",
-                task.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"
-              )}>
-                {task.title}
-              </h3>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className={cn(
+                  "font-medium truncate",
+                  task.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"
+                )}>
+                  {task.title}
+                </h3>
+                {task.due_date && !task.completed && (
+                  <Badge 
+                    variant="secondary" 
+                    className={cn(
+                      "flex items-center gap-1 px-2 py-0.5 text-xs",
+                      dueDateStatus === 'overdue' && "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                      dueDateStatus === 'today' && "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+                      dueDateStatus === 'normal' && "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                    )}
+                  >
+                    {dueDateStatus === 'overdue' && <AlertCircle className="w-3 h-3" />}
+                    {dueDateStatus === 'today' && <Calendar className="w-3 h-3" />}
+                    {dueDateStatus === 'normal' && <Calendar className="w-3 h-3" />}
+                    {dueDateLabel}
+                  </Badge>
+                )}
+                {!task.due_date && (
+                  <Badge variant="secondary" className="bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 text-xs">
+                    <Calendar className="w-3 h-3 mr-1" />
+                    Sem data
+                  </Badge>
+                )}
+              </div>
               {task.description && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
                   {task.description}
                 </p>
               )}
-              <Badge variant="secondary" className={cn(getPriorityColor(priority), "mt-2")}>
-                {priority === "high" ? "Alta" : priority === "medium" ? "Média" : "Baixa"}
-              </Badge>
             </div>
           </div>
           <DropdownMenu>

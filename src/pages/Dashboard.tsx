@@ -1,6 +1,6 @@
 "use client";
 
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { LogOut, Plus, CheckSquare, Clock, Trash2, LayoutDashboard, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useTasks, useCreateTask, useDeleteTask, useToggleTask } from "@/contexts/tasks/hooks/useTasks";
+import { useTasks } from "@/contexts/tasks/hooks/useTasks";
 import { TaskForm } from "@/contexts/tasks/components/TaskForm";
 import { TaskList } from "@/contexts/tasks/components/TaskList";
 import { useState, useEffect } from "react";
@@ -17,10 +17,12 @@ import type { Task } from "@/contexts/tasks/tasks.types";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [user, setUser] = useState<{ email: string; user_metadata?: { full_name?: string; avatar_url?: string } } | null>(null);
   
-  const { data: tasks, isLoading, refetch } = useTasks();
+  const sortBy = (searchParams.get('sort') as 'created_at' | 'due_date') || 'created_at';
+  const { data: tasks, isLoading, refetch } = useTasks({ sortBy });
   const createTask = useCreateTask();
   const deleteTask = useDeleteTask();
   const toggleTask = useToggleTask();

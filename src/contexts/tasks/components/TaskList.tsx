@@ -1,9 +1,10 @@
 "use client";
 
-import { CheckSquare, Clock, Loader2 } from "lucide-react";
+import { CheckSquare, Clock, Loader2, Calendar, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTasks } from "../hooks/useTasks";
 import { TaskItem } from "./TaskItem";
 import type { Task } from "../tasks.types";
@@ -47,6 +48,30 @@ export const TaskList = () => {
 
   return (
     <div className="space-y-6">
+      {/* Sort Selector */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-purple-500" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Ordenar por:</span>
+        </div>
+        <Select
+          onValueChange={(value) => {
+            // This will trigger a refetch with new sort order via queryKey
+            window.location.href = `?sort=${value}`;
+          }}
+          defaultValue="created_at"
+          className="w-[180px]"
+        >
+          <SelectTrigger className="text-sm">
+            <SelectValue placeholder="Data de criação" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="created_at">Data de criação (mais recente)</SelectItem>
+            <SelectItem value="due_date">Data de vencimento (mais próxima)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Pending Tasks */}
       {pendingTasks.length > 0 && (
         <section>

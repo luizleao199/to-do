@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Loader2 } from "lucide-react";
+import { X, Loader2, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,12 +10,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useCreateTask } from "../hooks/useTasks";
-import { cn } from "@/lib/utils";
+import { useCreateTask, useUpdateTask } from "../hooks/useTasks";
+import { cn, formatDate } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import type { Task } from "../tasks.types";
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
 
 const taskSchema = z.object({
   title: z.string().min(1, "Título é obrigatório").max(100, "Título deve ter no máximo 100 caracteres"),
   description: z.string().max(500, "Descrição deve ter no máximo 500 caracteres").optional(),
+  due_date: z.string().nullable().refine(
+    (date) => {
+      if (!date) return true;
+      const selectedDate = new Date(date);
+      selectedDate.setHours(0, 0, 0, 0);
+      return selectedDate >= today;
+    },
+    { message: "A data de vencimento não pode ser anterior a hoje" }
+  ),
 });
 
 type TaskFormData = z.infer<typeof taskSchema>;
@@ -23,32 +38,61 @@ type TaskFormData = z.infer<typeof taskSchema>;
 interface TaskFormProps {
   onClose: () => void;
   isOpen: boolean;
+  taskToEdit?: Task | null;
 }
 
-export const TaskForm = ({ onClose, isOpen }: TaskFormProps) => {
+export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+  const isEditing = !!taskToEdit;
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       title: "",
       description: "",
+      due_date: null,
     },
   });
+
+  // Pre-populate form when editing
+  const handleOpenChange = (open: boolean) => {
+    if (open && taskToEdit) {
+      reset({
+        title: taskToEdit.title,
+        description: taskToEdit.description || "",
+        due_date: taskToEdit.due_date,
+      });
+    } else if (!open) {
+      reset({
+        title: "",
+        description: "",
+        due_date: null,
+      });
+    }
+  };
 
   const onSubmit = async (data: TaskFormData) => {
     setIsSubmitting(true);
     try {
-      await createTask.mutateAsync({
+      const payload = {
         title: data.title,
         description: data.description || null,
-      });
+        due_date: data.due_date,
+      };
+
+      if (isEditing && taskToEdit) {
+        await updateTask.mutateAsync({ id: taskToEdit.id, updates: payload });
+      } else {
+        await createTask.mutateAsync(payload);
+      }
       reset();
       onClose();
     } catch (err) {
@@ -65,7 +109,9 @@ export const TaskForm = ({ onClose, isOpen }: TaskFormProps) => {
       <div className="w-full max-w-md bg-white dark:bg-purple-950 rounded-2xl shadow-xl border border-purple-100 dark:border-purple-800 animate-slide-up">
         <Card className="border-none bg-transparent shadow-none">
           <CardHeader className="pb-4 flex items-center justify-between">
-            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">Nova Tarefa</CardTitle>
+            <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
+              {isEditing ? "Editar Tarefa" : "Nova Tarefa"}
+            </CardTitle>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1"
@@ -117,6 +163,43 @@ export const TaskForm = ({ onClose, isOpen }: TaskFormProps) => {
                 )}
               </div>
 
+              <div className="space-y-1.5">
+                <Label htmlFor="due_date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Data de vencimento (opcional)
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        errors.due_date && "border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500"
+                      )}
+                      disabled={isSubmitting}
+                    >
+                      <Calendar className="w-4 h-4 mr-2 text-gray-400" aria-hidden="true" />
+                      {data.due_date ? formatDate(data.due_date) : "Selecionar data"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={data.due_date ? new Date(data.due_date) : undefined}
+                      onSelect={setValue("due_date")}
+                      initialFocus
+                      disabledBefore={today}
+                      className="rounded-xl border-purple-100 dark:border-purple-800"
+                    />
+                  </PopoverContent>
+                </Popover>
+                {errors.due_date && (
+                  <p className="text-sm text-red-500 dark:text-red-400" role="alert">
+                    {errors.due_date.message}
+                  </p>
+                )}
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <Button
                   type="button"
@@ -141,7 +224,7 @@ export const TaskForm = ({ onClose, isOpen }: TaskFormProps) => {
                       Salvando...
                     </span>
                   ) : (
-                    "Criar Tarefa"
+                    isEditing ? "Salvar" : "Criar Tarefa"
                   )}
                 </Button>
               </div>
