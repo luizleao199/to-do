@@ -189,7 +189,7 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
                     <CalendarComponent
                       mode="single"
                       selected={watchedDueDate ? new Date(watchedDueDate) : undefined}
-                      onSelect={setValue("due_date")}
+                      onSelect={(date) => setValue("due_date", date ? date.toISOString().split('T')[0] : null)}
                       initialFocus
                       disabledBefore={today}
                       className="rounded-xl border-purple-100 dark:border-purple-800"
