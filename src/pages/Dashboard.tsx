@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useTasks, useCreateTask, useDeleteTask, useToggleTask } from "@/contexts/tasks/hooks/useTasks";
+import { useTasks, useCreateTask, useDeleteTask, useToggleTask, useCompletedCount, useDeletedCount } from "@/contexts/tasks/hooks/useTasks";
 import { TaskForm } from "@/contexts/tasks/components/TaskForm";
 import { TaskList } from "@/contexts/tasks/components/TaskList";
 import { useState, useEffect } from "react";
@@ -23,6 +23,8 @@ const Dashboard = () => {
   
   const sortBy = (searchParams.get('sort') as 'created_at' | 'due_date') || 'created_at';
   const { data: tasks, isLoading, refetch } = useTasks({ sortBy });
+  const { data: completedCount } = useCompletedCount();
+  const { data: deletedCount } = useDeletedCount();
   const createTask = useCreateTask();
   const deleteTask = useDeleteTask();
   const toggleTask = useToggleTask();
@@ -68,16 +70,16 @@ const Dashboard = () => {
     setIsFormOpen(false);
   };
 
-  // Stats calculados dinamicamente
+  // Stats calculados dinamicamente usando os hooks de contagem
   const totalTasks = tasks?.length ?? 0;
-  const completedTasks = tasks?.filter(t => t.completed).length ?? 0;
-  const pendingTasks = tasks?.filter(t => !t.completed).length ?? 0;
+  const completedTasks = completedCount ?? 0;
+  const pendingTasks = totalTasks - completedTasks;
 
   const stats = [
     { label: "Total", count: totalTasks, icon: CheckSquare, color: "bg-purple-500" },
     { label: "Concluídas", count: completedTasks, icon: CheckSquare, color: "bg-green-500" },
     { label: "Pendentes", count: pendingTasks, icon: Clock, color: "bg-yellow-500" },
-    { label: "Excluídas", count: 0, icon: Trash2, color: "bg-red-500" },
+    { label: "Excluídas", count: deletedCount ?? 0, icon: Trash2, color: "bg-red-500" },
   ];
 
   const getInitials = (email: string) => {
