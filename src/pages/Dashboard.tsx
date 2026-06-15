@@ -12,7 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTasks, useCreateTask, useDeleteTask, useToggleTask } from "@/contexts/tasks/hooks/useTasks";
 import { TaskForm } from "@/contexts/tasks/components/TaskForm";
 import { TaskList } from "@/contexts/tasks/components/TaskList";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useEffect } from "react";
 import type { Task } from "@/contexts/tasks/tasks.types";
 
@@ -21,7 +20,6 @@ const Dashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [user, setUser] = useState<{ email: string; user_metadata?: { full_name?: string; avatar_url?: string } } | null>(null);
-  const [activeTab, setActiveTab] = useState<'pendente' | 'concluida' | 'excluida'>('pendente');
   
   const sortBy = (searchParams.get('sort') as 'created_at' | 'due_date') || 'created_at';
   const { data: tasks, isLoading, refetch } = useTasks({ sortBy });
@@ -74,16 +72,13 @@ const Dashboard = () => {
   const totalTasks = tasks?.length ?? 0;
   const completedTasks = tasks?.filter(t => t.status === 'concluida').length ?? 0;
   const pendingTasks = tasks?.filter(t => t.status === 'pendente').length ?? 0;
-  const deletedTasks = tasks?.filter(t => t.status === 'excluida').length ?? 0;
 
   const stats = [
     { label: "Total", count: totalTasks, icon: CheckSquare, color: "bg-purple-500" },
     { label: "Concluídas", count: completedTasks, icon: CheckSquare, color: "bg-green-500" },
     { label: "Pendentes", count: pendingTasks, icon: Clock, color: "bg-yellow-500" },
+    { label: "Excluídas", count: 0, icon: Trash2, color: "bg-red-500" },
   ];
-
-  // Filter tasks by active tab
-  const filteredTasks = tasks?.filter(t => t.status === activeTab) ?? [];
 
   const getInitials = (email: string) => {
     return email.split('@')[0].substring(0, 2).toUpperCase();
@@ -100,7 +95,7 @@ const Dashboard = () => {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center shadow-lg shadow-purple-500/25">
                   <LayoutDashboard className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold text-gray-900 dark:text-white">MINHAS TAREFAS</span>
+                <span className className className="text-xl font-bold text-gray-900 dark:text-white">MINHAS TAREFAS</span>
               </Link>
             </div>
             <div className="flex items-center gap-4">
@@ -147,7 +142,7 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8 animate-fade-in-up">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-fade-in-up">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -172,119 +167,17 @@ const Dashboard = () => {
           })}
         </div>
 
-        {/* Tasks Section with Tabs */}
-        <div className="animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Minhas Tarefas</h2>
-            <Button className="gap-2" size="sm" onClick={handleAddTask}>
-              <Plus className="w-4 h-4" />
-              Nova Tarefa
-            </Button>
-          </div>
+        {/* Tasks Section */}
+        <div className="flex items-center justify-between mb-4 animate-fade-in-up" style={{ animationDelay: "0.3s" }}>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Minhas Tarefas</h2>
+          <Button className="gap-2" size="sm" onClick={handleAddTask}>
+            <Plus className="w-4 h-4" />
+            Nova Tarefa
+          </Button>
+        </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border border-purple-100 dark:border-purple-800 rounded-xl p-1">
-              <TabsTrigger value="pendente" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
-                <span className="flex items-center gap-2 justify-center">
-                  <Clock className="w-4 h-4" />
-                  Pendentes
-                  {pendingTasks > 0 && (
-                    <Badge variant="secondary" className="ml-1 px-2 py-0.5 text-xs">
-                      {pendingTasks}
-                    </Badge>
-                  )}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="concluida" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
-                <span className="flex items-center gap-2 justify-center">
-                  <CheckSquare className="w-4 h-4" />
-                  Concluídas
-                  {completedTasks > 0 && (
-                    <Badge variant="secondary" className="ml-1 px-2 py-0.5 text-xs">
-                      {completedTasks}
-                    </Badge>
-                  )}
-                </span>
-              </TabsTrigger>
-              <TabsTrigger value="excluida" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
-                <span className="flex items-center gap-2 justify-center">
-                  <Trash2 className="w-4 h-4" />
-                  Excluídas
-                  {deletedTasks > 0 && (
-                    <Badge variant="secondary" className="ml-1 px-2 py-0.5 text-xs">
-                      {deletedTasks}
-                    </Badge>
-                  )}
-                </span>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="pendente" className="mt-4">
-              {filteredTasks.length === 0 ? (
-                <Card className="bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800">
-                  <CardContent className="py-12 px-6 text-center">
-                    <Clock className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Nenhuma tarefa pendente
-                    </h3>
-                    <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-xs mx-auto">
-                      Ótimo! Você não tem tarefas pendentes no momento.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {filteredTasks.map((task) => (
-                    <TaskItem key={task.id} task={task} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="concluida" className="mt-4">
-              {filteredTasks.length === 0 ? (
-                <Card className="bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800">
-                  <CardContent className="py-12 px-6 text-center">
-                    <CheckSquare className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Nenhuma tarefa concluída
-                    </h3>
-                    <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-xs mx-auto">
-                      Complete algumas tarefas para vê-las aqui.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {filteredTasks.map((task) => (
-                    <TaskItem key={task.id} task={task} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="excluida" className="mt-4">
-              {filteredTasks.length === 0 ? (
-                <Card className="bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm border-purple-100 dark:border-purple-800">
-                  <CardContent className="py-12 px-6 text-center">
-                    <Trash2 className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Nenhuma tarefa excluída
-                    </h3>
-                    <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-xs mx-auto">
-                      Tarefas excluídas aparecerão aqui.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-3">
-                  {filteredTasks.map((task) => (
-                    <TaskItem key={task.id} task={task} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+        <div className="animate-fade-in-up" style={{ animationDelay: "0.4s" }}>
+          <TaskList />
         </div>
       </main>
 
