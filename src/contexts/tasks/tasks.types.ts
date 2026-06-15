@@ -1,33 +1,34 @@
 /**
- * Task types for the To-Do List application
+ * Task types for the To-Do List application - aligned with Supabase tarefas table
  */
 
 export interface Task {
   id: string;
-  user_id: string;
-  title: string;
-  description: string | null;
-  due_date: string | null;
-  completed: boolean;
-  created_at: string;
+  usuario_id: string;
+  titulo: string;
+  descricao: string | null;
+  data_vencimento: string | null;
+  concluida: boolean;  // This column needs to be added to the table
+  criado_em: string;
+  atualizado_em: string;
 }
 
 export interface TaskInsert {
-  title: string;
-  description?: string | null;
-  due_date?: string | null;
-  completed?: boolean;
+  titulo: string;
+  descricao?: string | null;
+  data_vencimento?: string | null;
+  concluida?: boolean;
 }
 
 export interface TaskUpdate {
-  title?: string;
-  description?: string | null;
-  due_date?: string | null;
-  completed?: boolean;
+  titulo?: string;
+  descricao?: string | null;
+  data_vencimento?: string | null;
+  concluida?: boolean;
 }
 
 export interface TaskFilters {
-  completed?: boolean;
+  concluida?: boolean;
   search?: string;
-  sortBy?: 'created_at' | 'due_date';
+  sortBy?: 'criado_em' | 'data_vencimento';
 }
