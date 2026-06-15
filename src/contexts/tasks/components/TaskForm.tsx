@@ -52,6 +52,7 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
@@ -61,6 +62,8 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
       due_date: null,
     },
   });
+
+  const watchedDueDate = watch("due_date");
 
   // Pre-populate form when editing
   const handleOpenChange = (open: boolean) => {
@@ -179,13 +182,13 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
                       disabled={isSubmitting}
                     >
                       <Calendar className="w-4 h-4 mr-2 text-gray-400" aria-hidden="true" />
-                      {data.due_date ? formatDate(data.due_date) : "Selecionar data"}
+                      {watchedDueDate ? formatDate(watchedDueDate) : "Selecionar data"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
                     <CalendarComponent
                       mode="single"
-                      selected={data.due_date ? new Date(data.due_date) : undefined}
+                      selected={watchedDueDate ? new Date(watchedDueDate) : undefined}
                       onSelect={setValue("due_date")}
                       initialFocus
                       disabledBefore={today}
