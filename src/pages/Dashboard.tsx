@@ -68,10 +68,10 @@ const Dashboard = () => {
     setIsFormOpen(false);
   };
 
-  // Stats calculados dinamicamente
+  // Stats calculados dinamicamente - use status field
   const totalTasks = tasks?.length ?? 0;
-  const completedTasks = tasks?.filter(t => t.completed).length ?? 0;
-  const pendingTasks = tasks?.filter(t => !t.completed).length ?? 0;
+  const completedTasks = tasks?.filter(t => t.status === 'concluida').length ?? 0;
+  const pendingTasks = tasks?.filter(t => t.status === 'pendente').length ?? 0;
 
   const stats = [
     { label: "Total", count: totalTasks, icon: CheckSquare, color: "bg-purple-500" },
@@ -95,7 +95,7 @@ const Dashboard = () => {
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center shadow-lg shadow-purple-500/25">
                   <LayoutDashboard className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold text-gray-900 dark:text-white">MINHAS TAREFAS</span>
+                <span className className className="text-xl font-bold text-gray-900 dark:text-white">MINHAS TAREFAS</span>
               </Link>
             </div>
             <div className="flex items-center gap-4">
