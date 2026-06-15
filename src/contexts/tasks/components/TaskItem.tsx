@@ -106,7 +106,6 @@ export const TaskItem = ({ task }: TaskItemProps) => {
               {/* Use task.descricao instead of task.description */}
               {task.descricao && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
                   {task.descricao}
                 </p>
               )}
