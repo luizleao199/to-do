@@ -11,7 +11,8 @@ import type { Task, TaskInsert, TaskUpdate, TaskFilters } from '../tasks.types';
 export const fetchTasks = async (filters?: TaskFilters): Promise<Task[]> => {
   let query = supabase
     .from('tarefas')
-    .select('*');
+    .select('*')
+    .neq('status', 'excluida'); // Exclude deleted tasks by default
 
   if (filters?.status) {
     query = query.eq('status', filters.status);
