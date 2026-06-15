@@ -10,23 +10,23 @@ import type { Task, TaskInsert, TaskUpdate, TaskFilters } from '../tasks.types';
  */
 export const fetchTasks = async (filters?: TaskFilters): Promise<Task[]> => {
   let query = supabase
-    .from('tasks')
+    .from('tarefas')
     .select('*');
 
-  if (filters?.completed !== undefined) {
-    query = query.eq('completed', filters.completed);
+  if (filters?.concluida !== undefined) {
+    query = query.eq('concluida', filters.concluida);
   }
 
   if (filters?.search) {
-    query = query.ilike('title', `%${filters.search}%`);
+    query = query.ilike('titulo', `%${filters.search}%`);
   }
 
   // Apply sorting
-  const sortBy = filters?.sortBy || 'created_at';
-  if (sortBy === 'due_date') {
-    query = query.order('due_date', { ascending: true, nullsLast: true });
+  const sortBy = filters?.sortBy || 'criado_em';
+  if (sortBy === 'data_vencimento') {
+    query = query.order('data_vencimento', { ascending: true, nullsLast: true });
   } else {
-    query = query.order('created_at', { ascending: false });
+    query = query.order('criado_em', { ascending: false });
   }
 
   const { data, error } = await query;
@@ -49,10 +49,13 @@ export const createTask = async (task: TaskInsert): Promise<Task> => {
   }
 
   const { data, error } = await supabase
-    .from('tasks')
+    .from('tarefas')
     .insert({
-      ...task,
-      user_id: user.id,
+      titulo: task.titulo,
+      descricao: task.descricao,
+      data_vencimento: task.data_vencimento,
+      concluida: task.concluida ?? false,
+      usuario_id: user.id,
     })
     .select()
     .single();
@@ -68,9 +71,16 @@ export const createTask = async (task: TaskInsert): Promise<Task> => {
  * Updates an existing task
  */
 export const updateTask = async (id: string, updates: TaskUpdate): Promise<Task> => {
+  const updateData: Record<string, unknown> = {};
+  
+  if (updates.titulo !== undefined) updateData.titulo = updates.titulo;
+  if (updates.descricao !== undefined) updateData.descricao = updates.descricao;
+  if (updates.data_vencimento !== undefined) updateData.data_vencimento = updates.data_vencimento;
+  if (updates.concluida !== undefined) updateData.concluida = updates.concluida;
+
   const { data, error } = await supabase
-    .from('tasks')
-    .update(updates)
+    .from('tarefas')
+    .update(updateData)
     .eq('id', id)
     .select()
     .single();
@@ -87,7 +97,7 @@ export const updateTask = async (id: string, updates: TaskUpdate): Promise<Task>
  */
 export const deleteTask = async (id: string): Promise<void> => {
   const { error } = await supabase
-    .from('tasks')
+    .from('tarefas')
     .delete()
     .eq('id', id);
 
@@ -99,6 +109,6 @@ export const deleteTask = async (id: string): Promise<void> => {
 /**
  * Toggles task completion status
  */
-export const toggleTaskCompletion = async (id: string, completed: boolean): Promise<Task> => {
-  return updateTask(id, { completed });
+export const toggleTaskCompletion = async (id: string, concluida: boolean): Promise<Task> => {
+  return updateTask(id, { concluida });
 };
