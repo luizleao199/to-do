@@ -4,7 +4,15 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { fetchTasks, createTask, updateTask, deleteTask, toggleTaskCompletion } from '../services/taskService';
+import { 
+  fetchTasks, 
+  createTask, 
+  updateTask, 
+  deleteTask, 
+  toggleTaskCompletion,
+  fetchCompletedCount,
+  fetchDeletedCount
+} from '../services/taskService';
 import type { Task, TaskInsert, TaskUpdate, TaskFilters } from '../tasks.types';
 
 const TASKS_QUERY_KEY = ['tasks'];
@@ -20,6 +28,26 @@ export const useTasks = (filters?: TaskFilters) => {
 };
 
 /**
+ * Hook to fetch completed tasks count
+ */
+export const useCompletedCount = () => {
+  return useQuery({
+    queryKey: ['tasks', 'completed-count'],
+    queryFn: fetchCompletedCount,
+  });
+};
+
+/**
+ * Hook to fetch deleted tasks count
+ */
+export const useDeletedCount = () => {
+  return useQuery({
+    queryKey: ['tasks', 'deleted-count'],
+    queryFn: fetchDeletedCount,
+  });
+};
+
+/**
  * Hook to create a new task
  */
 export const useCreateTask = () => {
@@ -29,6 +57,8 @@ export const useCreateTask = () => {
     mutationFn: (task: TaskInsert) => createTask(task),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'completed-count'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'deleted-count'] });
       toast.success('Tarefa criada com sucesso!');
     },
     onError: (error: Error) => {
@@ -47,6 +77,8 @@ export const useUpdateTask = () => {
     mutationFn: ({ id, updates }: { id: string; updates: TaskUpdate }) => updateTask(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'completed-count'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'deleted-count'] });
       toast.success('Tarefa atualizada!');
     },
     onError: (error: Error) => {
@@ -65,6 +97,8 @@ export const useDeleteTask = () => {
     mutationFn: (id: string) => deleteTask(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'completed-count'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'deleted-count'] });
       toast.success('Tarefa excluída!');
     },
     onError: (error: Error) => {
@@ -83,6 +117,8 @@ export const useToggleTask = () => {
     mutationFn: ({ id, completed }: { id: string; completed: boolean }) => toggleTaskCompletion(id, completed),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'completed-count'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'deleted-count'] });
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao alterar status');
