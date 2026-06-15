@@ -20,9 +20,9 @@ const today = new Date();
 today.setHours(0, 0, 0, 0);
 
 const taskSchema = z.object({
-  title: z.string().min(1, "Título é obrigatório").max(100, "Título deve ter no máximo 100 caracteres"),
-  description: z.string().max(500, "Descrição deve ter no máximo 500 caracteres").optional(),
-  due_date: z.string().nullable().refine(
+  titulo: z.string().min(1, "Título é obrigatório").max(100, "Título deve ter no máximo 100 caracteres"),
+  descricao: z.string().max(500, "Descrição deve ter no máximo 500 caracteres").optional(),
+  data_vencimento: z.string().nullable().refine(
     (date) => {
       if (!date) return true;
       const selectedDate = new Date(date);
@@ -57,27 +57,27 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
   } = useForm<TaskFormData>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      due_date: null,
+      titulo: "",
+      descricao: "",
+      data_vencimento: null,
     },
   });
 
-  const watchedDueDate = watch("due_date");
+  const watchedDueDate = watch("data_vencimento");
 
   // Pre-populate form when editing
   const handleOpenChange = (open: boolean) => {
     if (open && taskToEdit) {
       reset({
-        title: taskToEdit.title,
-        description: taskToEdit.description || "",
-        due_date: taskToEdit.due_date,
+        titulo: taskToEdit.titulo,
+        descricao: taskToEdit.descricao || "",
+        data_vencimento: taskToEdit.data_vencimento,
       });
     } else if (!open) {
       reset({
-        title: "",
-        description: "",
-        due_date: null,
+        titulo: "",
+        descricao: "",
+        data_vencimento: null,
       });
     }
   };
@@ -86,9 +86,9 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
     setIsSubmitting(true);
     try {
       const payload = {
-        title: data.title,
-        description: data.description || null,
-        due_date: data.due_date,
+        titulo: data.titulo,
+        descricao: data.descricao || null,
+        data_vencimento: data.data_vencimento,
       };
 
       if (isEditing && taskToEdit) {
@@ -126,48 +126,48 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
           <CardContent className="pt-0">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="title" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <Label htmlFor="titulo" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Título *
                 </Label>
                 <Input
-                  id="title"
+                  id="titulo"
                   placeholder="O que precisa ser feito?"
-                  {...register("title")}
+                  {...register("titulo")}
                   className={cn(
                     "border-gray-200 dark:border-purple-700 focus:border-purple-500 focus:ring-purple-500",
-                    errors.title && "border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500"
+                    errors.titulo && "border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500"
                   )}
                   disabled={isSubmitting}
                   autoFocus
                 />
-                {errors.title && (
+                {errors.titulo && (
                   <p className="text-sm text-red-500 dark:text-red-400" role="alert">
-                    {errors.title.message}
+                    {errors.titulo.message}
                   </p>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="description" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <Label htmlFor="descricao" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Descrição (opcional)
                 </Label>
                 <Textarea
-                  id="description"
+                  id="descricao"
                   placeholder="Adicione detalhes..."
-                  {...register("description")}
+                  {...register("descricao")}
                   rows={3}
                   className="border-gray-200 dark:border-purple-700 focus:border-purple-500 focus:ring-purple-500"
                   disabled={isSubmitting}
                 />
-                {errors.description && (
+                {errors.descricao && (
                   <p className="text-sm text-red-500 dark:text-red-400" role="alert">
-                    {errors.description.message}
+                    {errors.descricao.message}
                   </p>
                 )}
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="due_date" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <Label htmlFor="data_vencimento" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Data de vencimento (opcional)
                 </Label>
                 <Popover>
@@ -177,7 +177,7 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        errors.due_date && "border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500"
+                        errors.data_vencimento && "border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500"
                       )}
                       disabled={isSubmitting}
                     >
@@ -189,16 +189,16 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
                     <CalendarComponent
                       mode="single"
                       selected={watchedDueDate ? new Date(watchedDueDate) : undefined}
-                      onSelect={(date) => setValue("due_date", date ? date.toISOString().split('T')[0] : null)}
+                      onSelect={(date) => setValue("data_vencimento", date ? date.toISOString().split('T')[0] : null)}
                       initialFocus
                       disabledBefore={today}
                       className="rounded-xl border-purple-100 dark:border-purple-800"
                     />
                   </PopoverContent>
                 </Popover>
-                {errors.due_date && (
+                {errors.data_vencimento && (
                   <p className="text-sm text-red-500 dark:text-red-400" role="alert">
-                    {errors.due_date.message}
+                    {errors.data_vencimento.message}
                   </p>
                 )}
               </div>
