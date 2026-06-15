@@ -13,8 +13,8 @@ export const fetchTasks = async (filters?: TaskFilters): Promise<Task[]> => {
     .from('tarefas')
     .select('*');
 
-  if (filters?.concluida !== undefined) {
-    query = query.eq('concluida', filters.concluida);
+  if (filters?.status) {
+    query = query.eq('status', filters.status);
   }
 
   if (filters?.search) {
@@ -54,7 +54,7 @@ export const createTask = async (task: TaskInsert): Promise<Task> => {
       titulo: task.titulo,
       descricao: task.descricao,
       data_vencimento: task.data_vencimento,
-      concluida: task.concluida ?? false,
+      status: task.status ?? 'pendente',
       usuario_id: user.id,
     })
     .select()
@@ -76,7 +76,7 @@ export const updateTask = async (id: string, updates: TaskUpdate): Promise<Task>
   if (updates.titulo !== undefined) updateData.titulo = updates.titulo;
   if (updates.descricao !== undefined) updateData.descricao = updates.descricao;
   if (updates.data_vencimento !== undefined) updateData.data_vencimento = updates.data_vencimento;
-  if (updates.concluida !== undefined) updateData.concluida = updates.concluida;
+  if (updates.status !== undefined) updateData.status = updates.status;
 
   const { data, error } = await supabase
     .from('tarefas')
@@ -93,12 +93,12 @@ export const updateTask = async (id: string, updates: TaskUpdate): Promise<Task>
 };
 
 /**
- * Deletes a task
+ * Deletes a task (sets status to excluida - trigger moves to excluidas table)
  */
 export const deleteTask = async (id: string): Promise<void> => {
   const { error } = await supabase
     .from('tarefas')
-    .delete()
+    .update({ status: 'excluida' })
     .eq('id', id);
 
   if (error) {
@@ -109,6 +109,7 @@ export const deleteTask = async (id: string): Promise<void> => {
 /**
  * Toggles task completion status
  */
-export const toggleTaskCompletion = async (id: string, concluida: boolean): Promise<Task> => {
-  return updateTask(id, { concluida });
+export const toggleTaskCompletion = async (id: string, completed: boolean): Promise<Task> => {
+  const newStatus = completed ? 'concluida' : 'pendente';
+  return updateTask(id, { status: newStatus });
 };
