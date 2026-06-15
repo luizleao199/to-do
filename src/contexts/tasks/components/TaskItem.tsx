@@ -17,8 +17,11 @@ export const TaskItem = ({ task }: TaskItemProps) => {
   const toggleTask = useToggleTask();
   const deleteTask = useDeleteTask();
 
+  // Derive completed from status field
+  const isCompleted = task.status === 'concluida';
+
   const handleToggle = () => {
-    toggleTask.mutate({ id: task.id, completed: !task.completed });
+    toggleTask.mutate({ id: task.id, completed: !isCompleted });
   };
 
   const handleDelete = () => {
@@ -28,27 +31,16 @@ export const TaskItem = ({ task }: TaskItemProps) => {
   };
 
   // Use correct database field names: data_vencimento, not due_date
-  const dueDateStatus = getDueDateStatus(task.data_vencimento, task.completed);
+  const dueDateStatus = getDueDateStatus(task.data_vencimento, isCompleted);
   const dueDateLabel = getDueDateLabel(task.data_vencimento);
 
   const getCardClasses = () => {
     const base = "bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm transition-all duration-200 group hover:shadow-md hover:shadow-purple-500/10";
-    if (task.completed) return cn(base, "opacity-70");
+    if (isCompleted) return cn(base, "opacity-70");
     if (dueDateStatus === 'overdue') return cn(base, "border-2 border-red-300 dark:border-red-700");
     if (dueDateStatus === 'today') return cn(base, "border-2 border-yellow-300 dark:border-yellow-700");
     return cn(base, "border-purple-100 dark:border-purple-800");
   };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-      case "medium": return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case "low": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      default: return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
-    }
-  };
-
-  const priority = task.completed ? "low" : "medium";
 
   return (
     <Card className={getCardClasses()}>
@@ -59,7 +51,7 @@ export const TaskItem = ({ task }: TaskItemProps) => {
               onClick={handleToggle}
               className={cn(
                 "w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors",
-                task.completed
+                isCompleted
                   ? "border-green-500 bg-green-500 text-white hover:bg-green-600"
                   : dueDateStatus === 'overdue'
                   ? "border-red-500 hover:bg-red-50 dark:hover:bg-red-900/30"
@@ -67,20 +59,19 @@ export const TaskItem = ({ task }: TaskItemProps) => {
                   ? "border-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/30"
                   : "border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/30"
               )}
-              aria-label={task.completed ? "Marcar como pendente" : "Marcar como concluída"}
+              aria-label={isCompleted ? "Marcar como pendente" : "Marcar como concluída"}
             >
-              {task.completed && <Check className="w-3.5 h-3.5" />}
+              {isCompleted && <Check className="w-3.5 h-3.5" />}
             </button>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                {/* Use task.titulo instead of task.title */}
                 <h3 className={cn(
                   "font-medium truncate",
-                  task.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"
+                  isCompleted ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"
                 )}>
                   {task.titulo}
                 </h3>
-                {task.data_vencimento && !task.completed && (
+                {task.data_vencimento && !isCompleted && (
                   <Badge 
                     variant="secondary" 
                     className={cn(
@@ -103,7 +94,6 @@ export const TaskItem = ({ task }: TaskItemProps) => {
                   </Badge>
                 )}
               </div>
-              {/* Use task.descricao instead of task.description */}
               {task.descricao && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
                   {task.descricao}
