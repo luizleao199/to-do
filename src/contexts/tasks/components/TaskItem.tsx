@@ -27,8 +27,9 @@ export const TaskItem = ({ task }: TaskItemProps) => {
     }
   };
 
-  const dueDateStatus = getDueDateStatus(task.due_date, task.completed);
-  const dueDateLabel = getDueDateLabel(task.due_date);
+  // Use correct database field names: data_vencimento, not due_date
+  const dueDateStatus = getDueDateStatus(task.data_vencimento, task.completed);
+  const dueDateLabel = getDueDateLabel(task.data_vencimento);
 
   const getCardClasses = () => {
     const base = "bg-white/80 dark:bg-purple-950/80 backdrop-blur-sm transition-all duration-200 group hover:shadow-md hover:shadow-purple-500/10";
@@ -72,13 +73,14 @@ export const TaskItem = ({ task }: TaskItemProps) => {
             </button>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
+                {/* Use task.titulo instead of task.title */}
                 <h3 className={cn(
                   "font-medium truncate",
                   task.completed ? "line-through text-gray-400 dark:text-gray-500" : "text-gray-900 dark:text-white"
                 )}>
-                  {task.title}
+                  {task.titulo}
                 </h3>
-                {task.due_date && !task.completed && (
+                {task.data_vencimento && !task.completed && (
                   <Badge 
                     variant="secondary" 
                     className={cn(
@@ -94,16 +96,18 @@ export const TaskItem = ({ task }: TaskItemProps) => {
                     {dueDateLabel}
                   </Badge>
                 )}
-                {!task.due_date && (
+                {!task.data_vencimento && (
                   <Badge variant="secondary" className="bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 text-xs">
                     <Calendar className="w-3 h-3 mr-1" />
                     Sem data
                   </Badge>
                 )}
               </div>
-              {task.description && (
+              {/* Use task.descricao instead of task.description */}
+              {task.descricao && (
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
-                  {task.description}
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
+                  {task.descricao}
                 </p>
               )}
             </div>
