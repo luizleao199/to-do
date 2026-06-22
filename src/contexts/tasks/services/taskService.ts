@@ -1,3 +1,4 @@
+nullsFirst">
 /**
  * Task service - handles all Supabase operations for tasks
  */
@@ -25,7 +26,7 @@ export const fetchTasks = async (filters?: TaskFilters): Promise<Task[]> => {
   // Apply sorting
   const sortBy = filters?.sortBy || 'criado_em';
   if (sortBy === 'data_vencimento') {
-    query = query.order('data_vencimento', { ascending: true, nullsLast: true });
+    query = query.order('data_vencimento', { ascending: true, nullsFirst: true });
   } else {
     query = query.order('criado_em', { ascending: false });
   }

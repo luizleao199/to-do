@@ -236,7 +236,7 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
         </Card>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         @keyframes fade-in {
           from { opacity: 0; }
           to { opacity: 1; }

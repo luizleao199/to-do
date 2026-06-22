@@ -1,4 +1,3 @@
-to, removing style jsx">
 "use client";
 
 import { useState } from "react";
@@ -181,8 +180,9 @@ const Login = () => {
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
-                      );
-                      onBlur={() => validateForm()}
+                      if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
+                    }}
+                    onBlur={() => validateForm()}
                     className={`pl-10 pr-12 py-3 rounded-xl border-2 transition-all duration-200 ${
                       errors.password 
                         ? "border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500 bg-red-50 dark:bg-red-900/20" 

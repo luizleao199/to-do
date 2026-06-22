@@ -43,8 +43,8 @@ export const TaskList = () => {
     );
   }
 
-  const pendingTasks = tasks?.filter(t => !t.completed) ?? [];
-  const completedTasks = tasks?.filter(t => t.completed) ?? [];
+  const pendingTasks = tasks?.filter(t => t.status !== 'concluida') ?? [];
+  const completedTasks = tasks?.filter(t => t.status === 'concluida') ?? [];
 
   return (
     <div className="space-y-6">
@@ -59,15 +59,14 @@ export const TaskList = () => {
             // This will trigger a refetch with new sort order via queryKey
             window.location.href = `?sort=${value}`;
           }}
-          defaultValue="created_at"
-          className="w-[180px]"
+          defaultValue="criado_em"
         >
-          <SelectTrigger className="text-sm">
+          <SelectTrigger className="w-[180px] text-sm">
             <SelectValue placeholder="Data de criação" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="created_at">Data de criação (mais recente)</SelectItem>
-            <SelectItem value="due_date">Data de vencimento (mais próxima)</SelectItem>
+            <SelectItem value="criado_em">Data de criação (mais recente)</SelectItem>
+            <SelectItem value="data_vencimento">Data de vencimento (mais próxima)</SelectItem>
           </SelectContent>
         </Select>
       </div>
