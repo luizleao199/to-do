@@ -301,8 +301,7 @@ const Register = () => {
         </p>
       </div>
 
-      {/* Custom Styles for Animations */}
-      <style jsx global>{`
+      <style>{`
         @keyframes fade-in-down {
           from {
             opacity: 0;

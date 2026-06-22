@@ -1,3 +1,4 @@
+to, removing style jsx">
 "use client";
 
 import { useState } from "react";
@@ -165,7 +166,7 @@ const Login = () => {
                     Senha
                   </Label>
                   <Link 
-                    href="/forgot-password"
+                    to="/forgot-password"
                     className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
                   >
                     Esqueci minha senha
@@ -180,9 +181,8 @@ const Login = () => {
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
-                      if (errors.password) setErrors(prev => ({ ...prev, password: undefined }));
-                    }}
-                    onBlur={() => validateForm()}
+                      );
+                      onBlur={() => validateForm()}
                     className={`pl-10 pr-12 py-3 rounded-xl border-2 transition-all duration-200 ${
                       errors.password 
                         ? "border-red-300 dark:border-red-700 focus:border-red-500 focus:ring-red-500 bg-red-50 dark:bg-red-900/20" 
@@ -269,8 +269,7 @@ const Login = () => {
         </p>
       </div>
 
-      {/* Custom Styles for Animations */}
-      <style jsx global>{`
+      <style>{`
         @keyframes fade-in-down {
           from {
             opacity: 0;
