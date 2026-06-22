@@ -1,4 +1,3 @@
-nullsFirst">
 /**
  * Task service - handles all Supabase operations for tasks
  */
