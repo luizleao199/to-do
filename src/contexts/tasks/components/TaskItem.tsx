@@ -204,10 +204,9 @@ export const TaskItem = ({ task }: TaskItemProps) => {
         open={showEditConfirm}
         onOpenChange={setShowEditConfirm}
         title="Editar tarefa"
-        description=>
-          Deseja editar a tarefa <strong>{task.titulo}</strong>?
-        </strong>
-        />
+        description={
+          <>Deseja editar a tarefa <strong>{task.titulo}</strong>?</>
+        }
         onConfirm={handleConfirmEdit}
         confirmText="Confirmar"
       />
@@ -217,10 +216,9 @@ export const TaskItem = ({ task }: TaskItemProps) => {
         open={showDeleteConfirm}
         onOpenChange={setShowDeleteConfirm}
         title="Excluir tarefa"
-        description=>
-          Tem certeza que deseja excluir a tarefa <strong>{task.titulo}</strong>? Esta ação não pode ser desfeita.
-        </strong>
-        />
+        description={
+          <>Tem certeza que deseja excluir a tarefa <strong>{task.titulo}</strong>? Esta ação não pode ser desfeita.</>
+        }
         onConfirm={handleConfirmDelete}
         confirmText="Excluir"
       />
