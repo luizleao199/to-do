@@ -14,6 +14,7 @@ import { useCreateTask, useUpdateTask } from "../hooks/useTasks";
 import { cn, formatDate } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import type { Task } from "../tasks.types";
 
 const today = new Date();
@@ -43,6 +44,8 @@ interface TaskFormProps {
 
 export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState<TaskFormData | null>(null);
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const isEditing = !!taskToEdit;
@@ -83,12 +86,22 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
   };
 
   const onSubmit = async (data: TaskFormData) => {
+    // Show confirmation dialog before saving
+    setPendingSubmit(data);
+    setShowSaveConfirm(true);
+  };
+
+  const handleConfirmSave = async () => {
+    if (!pendingSubmit) return;
+    
+    setShowSaveConfirm(false);
     setIsSubmitting(true);
+    
     try {
       const payload = {
-        titulo: data.titulo,
-        descricao: data.descricao || null,
-        data_vencimento: data.data_vencimento,
+        titulo: pendingSubmit.titulo,
+        descricao: pendingSubmit.descricao || null,
+        data_vencimento: pendingSubmit.data_vencimento,
       };
 
       if (isEditing && taskToEdit) {
@@ -98,11 +111,17 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
       }
       reset();
       onClose();
+      setPendingSubmit(null);
     } catch (err) {
-      // Error handled by mutation
+      setPendingSubmit(null);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCancelSave = () => {
+    setShowSaveConfirm(false);
+    setPendingSubmit(null);
   };
 
   if (!isOpen) return null;
@@ -235,6 +254,38 @@ export const TaskForm = ({ onClose, isOpen, taskToEdit }: TaskFormProps) => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Save Confirmation Dialog */}
+      <AlertDialog open={showSaveConfirm} onOpenChange={setShowSaveConfirm}>
+        <AlertDialogContent className="dark:bg-purple-950 border-purple-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+              {isEditing ? "Confirmar edição" : "Confirmar criação"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
+              {isEditing 
+                ? "Tem certeza que deseja salvar as alterações nesta tarefa?" 
+                : "Tem certeza que deseja criar esta nova tarefa?"
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={handleCancelSave}
+              className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmSave} 
+              className="bg-purple-600 hover:bg-purple-700"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Salvando..." : (isEditing ? "Salvar alterações" : "Criar tarefa")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <style>{`
         @keyframes fade-in {
