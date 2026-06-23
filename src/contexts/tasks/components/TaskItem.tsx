@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToggleTask, useDeleteTask } from "../hooks/useTasks";
 import { cn, formatDate, getDueDateStatus, getDueDateLabel } from "@/lib/utils";
 import type { Task } from "../tasks.types";
@@ -21,6 +21,7 @@ export const TaskItem = ({ task }: TaskItemProps) => {
   const deleteTask = useDeleteTask();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [showEditConfirm, setShowEditConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Derive completed from status field
   const isCompleted = task.status === 'concluida';
@@ -29,10 +30,13 @@ export const TaskItem = ({ task }: TaskItemProps) => {
     toggleTask.mutate({ id: task.id, completed: !isCompleted });
   };
 
-  const handleDelete = () => {
-    if (confirm("Tem certeza que deseja excluir esta tarefa?")) {
-      deleteTask.mutate(task.id);
-    }
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setShowDeleteConfirm(false);
+    deleteTask.mutate(task.id);
   };
 
   const handleEditClick = () => {
@@ -59,6 +63,49 @@ export const TaskItem = ({ task }: TaskItemProps) => {
     if (dueDateStatus === 'today') return cn(base, "border-2 border-yellow-300 dark:border-yellow-700");
     return cn(base, "border-purple-100 dark:border-purple-800");
   };
+
+  // Shared confirmation dialog content
+  const ConfirmationDialog = ({ 
+    open, 
+    onOpenChange, 
+    title, 
+    description, 
+    onConfirm, 
+    confirmText = "Confirmar",
+    variant: _variant = "default" 
+  }: { 
+    open: boolean; 
+    onOpenChange: (open: boolean) => void; 
+    title: string; 
+    description: React.ReactNode; 
+    onConfirm: () => void; 
+    confirmText?: string;
+    variant?: "default" | "destructive";
+  }) => (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="dark:bg-purple-950 border-purple-800">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+            {title}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
+            {description}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700">
+            Cancelar
+          </AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={onConfirm} 
+            className="bg-purple-600 hover:bg-purple-700"
+          >
+            {confirmText}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   return (
     <>
@@ -140,7 +187,7 @@ export const TaskItem = ({ task }: TaskItemProps) => {
                   Editar
                 </DropdownMenuItem>
                 <DropdownMenuItem 
-                  onClick={handleDelete}
+                  onClick={handleDeleteClick}
                   className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
@@ -153,26 +200,30 @@ export const TaskItem = ({ task }: TaskItemProps) => {
       </Card>
 
       {/* Edit Confirmation Dialog */}
-      <AlertDialog open={showEditConfirm} onOpenChange={setShowEditConfirm}>
-        <AlertDialogContent className="dark:bg-purple-950 border-purple-800">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-              Editar tarefa
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-500 dark:text-gray-400">
-              Deseja editar a tarefa <strong>{task.titulo}</strong>?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700">
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmEdit} className="bg-purple-600 hover:bg-purple-700">
-              Confirmar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationDialog
+        open={showEditConfirm}
+        onOpenChange={setShowEditConfirm}
+        title="Editar tarefa"
+        description=>
+          Deseja editar a tarefa <strong>{task.titulo}</strong>?
+        </strong>
+        />
+        onConfirm={handleConfirmEdit}
+        confirmText="Confirmar"
+      />
+
+      {/* Delete Confirmation Dialog - identical appearance */}
+      <ConfirmationDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Excluir tarefa"
+        description=>
+          Tem certeza que deseja excluir a tarefa <strong>{task.titulo}</strong>? Esta ação não pode ser desfeita.
+        </strong>
+        />
+        onConfirm={handleConfirmDelete}
+        confirmText="Excluir"
+      />
 
       {/* Edit Form Modal */}
       <TaskForm 
