@@ -40,6 +40,23 @@ export const fetchTasks = async (filters?: TaskFilters): Promise<Task[]> => {
 };
 
 /**
+ * Fetches deleted tasks for the current user
+ */
+export const fetchDeletedTasks = async (): Promise<Task[]> => {
+  const { data, error } = await supabase
+    .from('tarefas')
+    .select('*')
+    .eq('status', 'excluida')
+    .order('atualizado_em', { ascending: false });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ?? [];
+};
+
+/**
  * Gets count of completed tasks
  */
 export const fetchCompletedCount = async (): Promise<number> => {
@@ -137,6 +154,24 @@ export const deleteTask = async (id: string): Promise<void> => {
   if (error) {
     throw new Error(error.message);
   }
+};
+
+/**
+ * Restores a deleted task (sets status back to pendente)
+ */
+export const restoreTask = async (id: string): Promise<Task> => {
+  const { data, error } = await supabase
+    .from('tarefas')
+    .update({ status: 'pendente' })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 };
 
 /**

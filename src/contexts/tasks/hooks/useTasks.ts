@@ -6,9 +6,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { 
   fetchTasks, 
+  fetchDeletedTasks,
   createTask, 
   updateTask, 
   deleteTask, 
+  restoreTask,
   toggleTaskCompletion,
   fetchCompletedCount,
   fetchDeletedCount
@@ -16,6 +18,7 @@ import {
 import type { Task, TaskInsert, TaskUpdate, TaskFilters } from '../tasks.types';
 
 const TASKS_QUERY_KEY = ['tasks'];
+const DELETED_TASKS_QUERY_KEY = ['tasks', 'deleted'];
 
 /**
  * Hook to fetch tasks with optional filters
@@ -24,6 +27,16 @@ export const useTasks = (filters?: TaskFilters) => {
   return useQuery({
     queryKey: [...TASKS_QUERY_KEY, filters],
     queryFn: () => fetchTasks(filters),
+  });
+};
+
+/**
+ * Hook to fetch deleted tasks
+ */
+export const useDeletedTasks = () => {
+  return useQuery({
+    queryKey: DELETED_TASKS_QUERY_KEY,
+    queryFn: fetchDeletedTasks,
   });
 };
 
@@ -88,7 +101,7 @@ export const useUpdateTask = () => {
 };
 
 /**
- * Hook to delete a task
+ * Hook to delete a task (soft delete)
  */
 export const useDeleteTask = () => {
   const queryClient = useQueryClient();
@@ -97,12 +110,34 @@ export const useDeleteTask = () => {
     mutationFn: (id: string) => deleteTask(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: DELETED_TASKS_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ['tasks', 'completed-count'] });
       queryClient.invalidateQueries({ queryKey: ['tasks', 'deleted-count'] });
-      toast.success('Tarefa excluída!');
+      toast.success('Tarefa movida para a lixeira!');
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Erro ao excluir tarefa');
+    },
+  });
+};
+
+/**
+ * Hook to restore a deleted task
+ */
+export const useRestoreTask = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => restoreTask(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: DELETED_TASKS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'completed-count'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', 'deleted-count'] });
+      toast.success('Tarefa restaurada com sucesso!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao restaurar tarefa');
     },
   });
 };

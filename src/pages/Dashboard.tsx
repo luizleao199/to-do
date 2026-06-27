@@ -1,7 +1,7 @@
 "use client";
 
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { LogOut, Plus, CheckSquare, Clock, Trash2, LayoutDashboard, User } from "lucide-react";
+import { LogOut, Plus, CheckSquare, Clock, Trash2, LayoutDashboard, User, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -79,7 +79,7 @@ const Dashboard = () => {
     { label: "Total", count: totalTasks, icon: CheckSquare, color: "bg-purple-500" },
     { label: "Concluídas", count: completedTasks, icon: CheckSquare, color: "bg-green-500" },
     { label: "Pendentes", count: pendingTasks, icon: Clock, color: "bg-yellow-500" },
-    { label: "Excluídas", count: deletedCount ?? 0, icon: Trash2, color: "bg-red-500" },
+    { label: "Lixeira", count: deletedCount ?? 0, icon: Trash2, color: "bg-red-500" },
   ];
 
   const getInitials = (email: string) => {
@@ -100,7 +100,22 @@ const Dashboard = () => {
                 <span className="text-xl font-bold text-gray-900 dark:text-white">MINHAS TAREFAS</span>
               </Link>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {/* Trash Link */}
+              <Link to="/trash">
+                <Button 
+                  variant="ghost" 
+                  className="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/50 p-2 rounded-xl transition-colors"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span className="hidden sm:inline font-medium">Lixeira</span>
+                  {(deletedCount ?? 0) > 0 && (
+                    <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs ml-1">
+                      {deletedCount}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
